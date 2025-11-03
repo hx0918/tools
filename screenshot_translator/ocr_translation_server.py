@@ -15,10 +15,16 @@ ocr = PaddleOCR(
     use_doc_orientation_classify=False,
     use_doc_unwarping=False,
     use_textline_orientation=False,
-    device='gpu',
+    device='cpu',
     lang='en',
 )
 print("OCR模型加载完成！")
+
+
+# 启动时预加载翻译模型
+print("正在加载翻译模型...")
+installed_languages = argostranslate.translate.get_installed_languages()
+print("翻译模型加载完成！")
 
 @app.route('/ocr', methods=['POST'])
 def ocr_endpoint():
@@ -33,7 +39,7 @@ def ocr_endpoint():
         image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         
         # 临时保存图片
-        temp_path = r"D:\Source\ai_tools\screenshot_translator\temp\screenshot_server.png"
+        temp_path = r"C:\MY_SPACE\Sources\tools\screenshot_translator\temp\screenshot_server.png"
         cv2.imwrite(temp_path, image)
         
         # OCR识别

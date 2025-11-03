@@ -77,9 +77,9 @@ def main(image_path):
         translated_text = translate_result["translated"]
         print(f"翻译内容：\n{translated_text}")
 
-        print("正在LibreTranslate ...", file=sys.stderr)
-        libre_translated_text = libre_translate(ocr_text)
-        print(libre_translated_text)
+        # print("正在LibreTranslate ...", file=sys.stderr)
+        # libre_translated_text = libre_translate(ocr_text)
+        # print(libre_translated_text)
         
     except Exception as e:
         print(f"处理失败：{str(e)}")
