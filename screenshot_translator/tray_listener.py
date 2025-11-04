@@ -141,7 +141,7 @@ class ScreenshotTranslatorTray:
             try:
                 result = subprocess.run([
                     sys.executable, str(self.script_path)
-                ], capture_output=True, text=True, timeout=60)
+                ], capture_output=True, text=True)
                 
                 if result.returncode == 0:
                     self.tray_icon.showMessage("翻译完成", "截图翻译成功完成", QSystemTrayIcon.Information, 3000)

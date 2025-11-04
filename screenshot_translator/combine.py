@@ -40,6 +40,31 @@ class ScreenshotTranslator:
             print(f"执行命令失败: {e}", file=sys.stderr)
             return -1
     
+    def run_command_no_timeout(self, command, description=""):
+        """运行命令并返回退出码和输出"""
+        if description:
+            # print(f"\n{description}", file=sys.stderr)
+            print(f"执行命令: {' '.join(command)}", file=sys.stderr)
+            pass
+        
+        try:
+            result = subprocess.run(command, capture_output=True, text=True)
+            
+            # if result.stdout:
+            #     print(f"输出:\n{result.stdout.strip()}", file=sys.stderr)
+            # if result.stderr:
+            #     print(f"log:\n{result.stderr.strip()}", file=sys.stderr)
+            
+            # print(f"退出码: {result.returncode}", file=sys.stderr)
+            return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+            
+        except subprocess.TimeoutExpired:
+            print("命令执行超时", file=sys.stderr)
+            return -1
+        except Exception as e:
+            print(f"执行命令失败: {e}", file=sys.stderr)
+            return -1
+    
     def step1_screenshot(self):
         """步骤1: 截图"""
         print("=" * 50)
@@ -131,7 +156,7 @@ class ScreenshotTranslator:
         print("=" * 50, file=sys.stderr)
         
         gui_script = self.base_dir / "translate_gui.py"
-        result = self.run_command(
+        result = self.run_command_no_timeout(
             [sys.executable, str(gui_script)],
             "执行显示结果"
         )

@@ -205,7 +205,17 @@ def main():
     window = TranslationApp(source_text, target_text)
     window.show()
     
-    sys.exit(app.exec_())
+    # 存储应用实例以便获取结果
+    result = app.exec_()
+    
+    # 检查是否有翻译结果
+    # if window.target_text.toPlainText().strip():
+    #     print("翻译完成")
+    #     return 0
+    # else:
+    #     print("翻译未完成或用户取消")
+    #     return -1
+    return 0
 
 if __name__ == "__main__":
     main()

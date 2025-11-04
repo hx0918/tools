@@ -1,1 +1,0 @@
-[1104/102218.126:ERROR:base\metrics\persistent_histogram_storage.cc:111] Could not write "PlatformExperienceHelperMetrics" persistent histograms to file as the storage base directory is not properly set.
