@@ -130,7 +130,7 @@ class ScreenshotTranslatorTray:
         if self.listening:
             self.listen_action.setText("监听已启动")
             self.tray_icon.setToolTip("截图翻译工具 - 按鼠标中键截图翻译")
-            self.tray_icon.showMessage("监听启动", "鼠标中键监听已启动", QSystemTrayIcon.Information, 2000)
+            # self.tray_icon.showMessage("监听启动", "鼠标中键监听已启动", QSystemTrayIcon.Information, 2000)
         else:
             self.listen_action.setText("监听已停止")
             self.tray_icon.setToolTip("截图翻译工具 - 监听已停止")
@@ -144,14 +144,14 @@ class ScreenshotTranslatorTray:
                 ], capture_output=True, text=True)
                 
                 if result.returncode == 0:
-                    self.tray_icon.showMessage("翻译完成", "截图翻译成功完成", QSystemTrayIcon.Information, 3000)
+                    self.tray_icon.showMessage("翻译完成", "截图翻译成功完成", QSystemTrayIcon.Information, 1000)
                 else:
-                    self.tray_icon.showMessage("翻译失败", "截图翻译失败", QSystemTrayIcon.Critical, 3000)
+                    self.tray_icon.showMessage("翻译失败", "截图翻译失败", QSystemTrayIcon.Critical, 1000)
                     
             except subprocess.TimeoutExpired:
-                self.tray_icon.showMessage("翻译超时", "截图翻译流程超时", QSystemTrayIcon.Warning, 3000)
+                self.tray_icon.showMessage("翻译超时", "截图翻译流程超时", QSystemTrayIcon.Warning, 1000)
             except Exception as e:
-                self.tray_icon.showMessage("错误", f"启动失败: {str(e)}", QSystemTrayIcon.Critical, 3000)
+                self.tray_icon.showMessage("错误", f"启动失败: {str(e)}", QSystemTrayIcon.Critical, 1000)
         
         thread = threading.Thread(target=run_translation)
         thread.daemon = True
@@ -159,7 +159,7 @@ class ScreenshotTranslatorTray:
     
     def start_translation_manual(self):
         """手动启动翻译"""
-        self.tray_icon.showMessage("启动翻译", "开始截图翻译流程...", QSystemTrayIcon.Information, 2000)
+        self.tray_icon.showMessage("启动翻译", "开始截图翻译流程...", QSystemTrayIcon.Information, 1000)
         self.start_translation()
     
     def quit_app(self):
@@ -177,12 +177,12 @@ class ScreenshotTranslatorTray:
         self.start_mouse_listener()
         
         # 显示启动消息
-        self.tray_icon.showMessage(
-            "截图翻译工具", 
-            "程序已启动到系统托盘，按鼠标中键截图翻译", 
-            QSystemTrayIcon.Information, 
-            3000
-        )
+        # self.tray_icon.showMessage(
+        #     "截图翻译工具", 
+        #     "程序已启动到系统托盘，按鼠标中键截图翻译", 
+        #     QSystemTrayIcon.Information, 
+        #     1000
+        # )
         
         print("截图翻译工具已启动到系统托盘")
         print("按鼠标中键即可截图翻译")
