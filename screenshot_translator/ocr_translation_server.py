@@ -32,18 +32,18 @@ def ocr_endpoint():
     try:
         # 接收base64图片
         data = request.json
-        image_data = base64.b64decode(data['image'])
+        image_path = data['image']
         
         # 转换为OpenCV格式
-        image = Image.open(io.BytesIO(image_data))
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        # image = Image.open(io.BytesIO(image_data))
+        # image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         
         # 临时保存图片
-        temp_path = r"C:\MY_SPACE\Sources\tools\screenshot_translator\temp\screenshot_server.png"
-        cv2.imwrite(temp_path, image)
+        # temp_path = r"C:\MY_SPACE\Sources\tools\screenshot_translator\temp\screenshot.png"
+        # cv2.imwrite(temp_path, image)
         
         # OCR识别
-        result = ocr.predict(input=temp_path)
+        result = ocr.predict(input=image_path)
         
         # 解析结果
         all_text_lines = []

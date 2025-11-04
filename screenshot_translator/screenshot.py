@@ -6,19 +6,17 @@ from PIL import Image, ImageTk
 import pyautogui
 from datetime import datetime
 
-class RectangleScreenshot:
+class SimpleRectangleScreenshot:
     def __init__(self):
         # 初始化变量
         self.root = None
         self.canvas = None
         self.screenshot_image = None
-        self.screenshot_photo = None
         self.overlay_image = None
         self.start_x = self.start_y = self.end_x = self.end_y = 0
         self.rect = None
-        self.current_screen = None
-        self.screen_info = None
         self.drawing = False
+        self.tracking = True
         
         # 截图保存路径
         self.save_path = os.path.expanduser("~/Pictures/Screenshots")
@@ -28,56 +26,13 @@ class RectangleScreenshot:
         self.start_screenshot()
     
     def get_screen_info(self):
-        """获取所有屏幕信息（修复多屏幕支持）"""
-        screens = []
-        try:
-            # 使用tkinter获取多屏幕信息
-            temp_root = tk.Tk()
-            temp_root.withdraw()
-            
-            # 获取所有屏幕信息
-            for i in range(temp_root.winfo_screenwidth()):
-                try:
-                    width = temp_root.winfo_screenwidth()
-                    height = temp_root.winfo_screenheight()
-                    # 简单的多屏幕检测 - 实际应该使用更复杂的方法
-                    screens.append({
-                        'bbox': (0, 0, width, height),
-                        'width': width,
-                        'height': height
-                    })
-                    break
-                except:
-                    break
-            
-            temp_root.destroy()
-            
-            # 如果没有检测到屏幕，使用pyautogui的默认方法
-            if not screens:
-                screens.append({
-                    'bbox': (0, 0, pyautogui.size().width, pyautogui.size().height),
-                    'width': pyautogui.size().width,
-                    'height': pyautogui.size().height
-                })
-                
-        except Exception as e:
-            print(f"获取屏幕信息失败: {e}")
-            # 备用方案
-            screens.append({
-                'bbox': (0, 0, 1920, 1080),  # 默认分辨率
-                'width': 1920,
-                'height': 1080
-            })
-        return screens
-    
-    def get_screen_info2(self):
-        """使用screeninfo获取所有屏幕信息"""
+        """获取所有屏幕信息"""
         screens = []
         try:
             import screeninfo
             monitors = screeninfo.get_monitors()
             
-            for i, monitor in enumerate(monitors):
+            for monitor in monitors:
                 screens.append({
                     'bbox': (monitor.x, monitor.y, monitor.x + monitor.width, monitor.y + monitor.height),
                     'width': monitor.width,
@@ -85,19 +40,7 @@ class RectangleScreenshot:
                     'x': monitor.x,
                     'y': monitor.y
                 })
-            
-            # 如果没有检测到屏幕，使用备用方案
-            if not screens:
-                screens.append({
-                    'bbox': (0, 0, pyautogui.size().width, pyautogui.size().height),
-                    'width': pyautogui.size().width,
-                    'height': pyautogui.size().height,
-                    'x': 0,
-                    'y': 0
-                })
-                
         except ImportError:
-            print("未安装screeninfo库，使用备用屏幕检测方法")
             # 备用方案
             screens.append({
                 'bbox': (0, 0, pyautogui.size().width, pyautogui.size().height),
@@ -108,7 +51,6 @@ class RectangleScreenshot:
             })
         except Exception as e:
             print(f"获取屏幕信息失败: {e}")
-            # 最终备用方案
             screens.append({
                 'bbox': (0, 0, 1920, 1080),
                 'width': 1920,
@@ -120,103 +62,130 @@ class RectangleScreenshot:
         return screens
 
     def get_current_screen(self, x, y):
-        """根据坐标获取当前所在屏幕（使用screeninfo）"""
-
-        print(f"获取当前屏幕，坐标: ({x}, {y})")
+        """根据坐标获取当前所在屏幕"""
         screens = self.get_screen_info()
-        print("1")
-        print(screens)
-        screens = self.get_screen_info2()
-        print("2")
-        print(screens)
         
-        for i, screen in enumerate(screens):
+        for screen in screens:
             x1, y1, x2, y2 = screen['bbox']
-            # 检查坐标是否在当前屏幕范围内
             if x1 <= x < x2 and y1 <= y < y2:
-                return i, screen
+                return screen
         
-        # 如果没有找到匹配的屏幕，返回第一个屏幕
-        return 0, screens[0]
-
-    def create_overlay_image(self, width, height, alpha=0.8):
+        # 默认返回第一个屏幕
+        return screens[0]
+    
+    def create_overlay_image(self, width, height, alpha=0.7):
         """创建半透明覆盖层"""
-        # 创建深色半透明图像
-        overlay = Image.new('RGBA', (width, height), (0, 0, 0, int(255 * alpha)))
-        return overlay
+        return Image.new('RGBA', (width, height), (0, 0, 0, int(255 * alpha)))
     
     def take_screen_screenshot(self, screen_info):
         """截取指定屏幕的截图"""
         bbox = screen_info['bbox']
         try:
-            screenshot = pyautogui.screenshot(region=bbox)
+            x, y, x2, y2 = bbox
+            width = x2 - x
+            height = y2 - y
+            screenshot = pyautogui.screenshot(region=(x, y, width, height))
             return screenshot.convert('RGBA')
         except Exception as e:
             print(f"截图失败: {e}")
-            # 备用方案：截取整个屏幕
             return pyautogui.screenshot().convert('RGBA')
     
     def start_screenshot(self):
         """启动截图流程"""
-        # 短暂延迟，确保之前的UI操作完成
         time.sleep(0.3)
         
-        # 获取当前鼠标位置和所在屏幕
-        current_x, current_y = pyautogui.position()
-        screen_index, screen_info = self.get_current_screen(current_x, current_y)
-        self.current_screen = screen_index
-        self.screen_info = screen_info
+        # 创建主窗口
+        self.create_main_window()
         
-        # 创建GUI界面
-        self.create_gui()
+        # 初始显示当前屏幕
+        self.switch_to_current_screen()
+        
+        # 开始鼠标跟踪
+        self.start_mouse_tracking()
     
-    def create_gui(self):
-        """创建截图界面"""
+    def create_main_window(self):
+        """创建主窗口"""
         self.root = tk.Tk()
         self.root.attributes('-fullscreen', True)
         self.root.attributes('-topmost', True)
-        self.root.attributes('-alpha', 0.3)  # 初始半透明
-        
-        # 获取屏幕尺寸
-        screen_width = self.screen_info['width']
-        screen_height = self.screen_info['height']
+        self.root.attributes('-alpha', 0.01)  # 初始几乎透明
         
         # 创建画布
         self.canvas = tk.Canvas(
             self.root, 
-            width=screen_width, 
-            height=screen_height,
+            width=100,  # 初始小尺寸，后面会调整
+            height=100,
             highlightthickness=0,
             cursor="crosshair"
         )
         self.canvas.pack()
-        
-        # 截取屏幕截图
-        self.screenshot_image = self.take_screen_screenshot(self.screen_info)
-        
-        # 创建半透明覆盖层
-        self.overlay_image = self.create_overlay_image(screen_width, screen_height)
-        
-        # 显示截图和覆盖层
-        self.update_display()
         
         # 绑定事件
         self.canvas.bind("<ButtonPress-1>", self.on_button_press)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
         self.root.bind("<Escape>", self.cancel_screenshot)
-        self.root.bind("<KeyPress>", self.on_key_press)
         
-        # 设置窗口位置
-        x, y, _, _ = self.screen_info['bbox']
-        self.root.geometry(f"{screen_width}x{screen_height}+{x}+{y}")
+        print("截图工具已启动 - 拖动鼠标选择区域，按ESC取消")
+    
+    def switch_to_current_screen(self):
+        """切换到当前鼠标所在屏幕"""
+        current_x, current_y = pyautogui.position()
+        screen_info = self.get_current_screen(current_x, current_y)
         
-        # 显示窗口并获取焦点
-        self.root.focus_force()
-        self.canvas.focus_set()
+        # 截取屏幕截图
+        self.screenshot_image = self.take_screen_screenshot(screen_info)
+        
+        # 创建半透明覆盖层
+        self.overlay_image = self.create_overlay_image(screen_info['width'], screen_info['height'])
+        
+        # 移动窗口到目标屏幕并调整大小
+        self.root.geometry(f"{screen_info['width']}x{screen_info['height']}+{screen_info['x']}+{screen_info['y']}")
+        print(self.root.geometry())
+        self.canvas.config(width=screen_info['width'], height=screen_info['height'])
+        
+        # 显示内容
+        self.root.attributes('-alpha', 0.7)  # 变为半透明
+        self.update_display()
+        
+        print(f"已切换到屏幕 ({screen_info['x']}, {screen_info['y']}) - {screen_info['width']}x{screen_info['height']}")
+    
+    def start_mouse_tracking(self):
+        """开始实时监控鼠标移动"""
+        def check_mouse_position():
+            if not self.tracking or not self.root:
+                return
+                
+            try:
+                current_x, current_y = pyautogui.position()
+                current_screen = self.get_current_screen(current_x, current_y)
+                
+                # 获取当前窗口位置
+                window_geometry = self.root.geometry()
+                window_x = int(window_geometry.split('+')[1])
+                window_y = int(window_geometry.split('+')[2])
+                
+                # 如果鼠标在不同屏幕，且不在绘制过程中
+                if (current_screen['x'] != window_x or current_screen['y'] != window_y) and not self.drawing:
+                    self.switch_to_current_screen()
+                
+                # 继续监控
+                if self.tracking:
+                    self.root.after(100, check_mouse_position)
+                    
+            except Exception as e:
+                print(f"鼠标监控错误: {e}")
+                if self.tracking:
+                    self.root.after(100, check_mouse_position)
+        
+        # 开始监控循环
+        self.root.after(100, check_mouse_position)
     
     def update_display(self, rect_coords=None):
-        """更新显示，包括矩形选择区域"""
+        """更新显示"""
+        if not self.canvas:
+            return
+            
         self.canvas.delete("all")
         
         # 显示屏幕截图
@@ -235,17 +204,16 @@ class RectangleScreenshot:
         if rect_coords and self.screenshot_image:
             x1, y1, x2, y2 = rect_coords
             
-            # 在矩形区域显示原图（通过创建一个"窗口"来实现）
+            # 在矩形区域显示原图
             cropped_image = self.screenshot_image.crop((x1, y1, x2, y2))
             cropped_photo = ImageTk.PhotoImage(cropped_image)
-            
             self.canvas.create_image(x1, y1, anchor=tk.NW, image=cropped_photo)
-            self.canvas.cropped_photo = cropped_photo  # 保持引用
+            self.canvas.cropped_photo = cropped_photo
             
             # 绘制矩形边框
             self.rect = self.canvas.create_rectangle(
                 x1, y1, x2, y2,
-                outline='#FF0000', width=2,
+                outline='#FF0000', width=3,
                 tags="selection_rect"
             )
     
@@ -255,7 +223,6 @@ class RectangleScreenshot:
         self.start_y = event.y
         self.drawing = True
         
-        # 移除之前的矩形
         if self.rect:
             self.canvas.delete(self.rect)
     
@@ -264,16 +231,14 @@ class RectangleScreenshot:
         if not self.drawing:
             return
             
-        self.end_x = max(0, min(event.x, self.screen_info['width']))
-        self.end_y = max(0, min(event.y, self.screen_info['height']))
+        self.end_x = event.x
+        self.end_y = event.y
         
-        # 确保坐标正确
         x1 = min(self.start_x, self.end_x)
         y1 = min(self.start_y, self.end_y)
         x2 = max(self.start_x, self.end_x)
         y2 = max(self.start_y, self.end_y)
         
-        # 更新显示
         self.update_display((x1, y1, x2, y2))
     
     def on_button_release(self, event):
@@ -282,10 +247,9 @@ class RectangleScreenshot:
             return
             
         self.drawing = False
-        self.end_x = max(0, min(event.x, self.screen_info['width']))
-        self.end_y = max(0, min(event.y, self.screen_info['height']))
+        self.end_x = event.x
+        self.end_y = event.y
         
-        # 确保坐标正确
         x1 = min(self.start_x, self.end_x)
         y1 = min(self.start_y, self.end_y)
         x2 = max(self.start_x, self.end_x)
@@ -293,25 +257,29 @@ class RectangleScreenshot:
         
         # 确保区域有效
         if abs(x2 - x1) > 5 and abs(y2 - y1) > 5:
-            # 截取矩形区域
-            screen_x, screen_y, _, _ = self.screen_info['bbox']
+            # 获取当前窗口位置（即当前屏幕位置）
+            window_geometry = self.root.geometry()
+            screen_x = int(window_geometry.split('+')[1])
+            screen_y = int(window_geometry.split('+')[2])
+            
+            # 计算实际截图区域
             bbox = (
                 screen_x + x1,
                 screen_y + y1,
-                x2 - x1,  # 宽度
-                y2 - y1   # 高度
+                x2 - x1,
+                y2 - y1
             )
             
             try:
                 # 截取选中区域
                 region_screenshot = pyautogui.screenshot(region=bbox)
-                self.save_screenshot(region_screenshot)
+                filepath = self.save_screenshot(region_screenshot)
                 
                 # 显示成功消息
                 self.show_success_message(x1, y1)
                 
                 # 延迟后关闭
-                self.root.after(800, self.root.destroy)
+                self.root.after(800, self.cleanup_and_exit)
                 return
             except Exception as e:
                 print(f"截图失败: {e}")
@@ -322,24 +290,20 @@ class RectangleScreenshot:
     
     def show_success_message(self, x, y):
         """显示截图成功消息"""
-        success_text = "✓ 截图已保存"
         self.canvas.create_text(
             x + 60, y + 20,
-            text=success_text,
+            text="✓ 截图已保存",
             fill="#00FF00",
-            font=("Arial", 12, "bold"),
-            tags="success_msg"
+            font=("Arial", 12, "bold")
         )
     
     def show_error_message(self, x, y, error_msg):
         """显示错误消息"""
-        error_text = f"✗ 失败: {error_msg}"
         self.canvas.create_text(
             x + 80, y + 20,
-            text=error_text,
+            text=f"✗ {error_msg[:15]}...",
             fill="#FF0000",
-            font=("Arial", 10),
-            tags="error_msg"
+            font=("Arial", 10)
         )
     
     def save_screenshot(self, image):
@@ -351,39 +315,30 @@ class RectangleScreenshot:
         print(f"截图已保存: {filepath}")
         return filepath
     
-    def on_key_press(self, event):
-        """键盘事件处理"""
-        if event.keysym == 'Escape':
-            self.cancel_screenshot()
-    
     def cancel_screenshot(self, event=None):
         """取消截图"""
+        self.tracking = False
+        self.cleanup_and_exit()
+    
+    def cleanup_and_exit(self):
+        """清理并退出"""
+        self.tracking = False
         if self.root:
+            self.root.quit()
             self.root.destroy()
 
 def main():
     """主函数"""
     try:
-        # 检查依赖
-        import pyautogui
-        from PIL import Image, ImageTk
+        print("启动简单矩形截图工具...")
+        print("使用方法: 拖动鼠标选择区域，按ESC取消")
+        print("支持多屏幕 - 鼠标移动到其他屏幕自动切换")
         
-        print("启动矩形截图工具...")
-        print("使用方法:")
-        print("1. 鼠标拖动选择区域")
-        print("2. 释放鼠标完成截图")
-        print("3. 按ESC取消截图")
+        app = SimpleRectangleScreenshot()
+        app.root.mainloop()
         
-        # 启动截图工具
-        app = RectangleScreenshot()
-        
-        # 运行主循环
-        if app.root:
-            app.root.mainloop()
-            
     except ImportError as e:
-        print("缺少必要的依赖库，请安装：")
-        print("pip install pyautogui pillow")
+        print("缺少依赖库，请安装: pip install pyautogui pillow screeninfo")
     except Exception as e:
         print(f"错误: {e}")
 
