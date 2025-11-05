@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import sys
 import subprocess
 import threading
@@ -141,7 +143,7 @@ class ScreenshotTranslatorTray:
             try:
                 result = subprocess.run([
                     sys.executable, str(self.script_path)
-                ], capture_output=True, text=True)
+                ], capture_output=True, text=True, encoding='utf-8')
                 
                 if result.returncode == 0:
                     self.tray_icon.showMessage("翻译完成", "截图翻译成功完成", QSystemTrayIcon.Information, 1000)

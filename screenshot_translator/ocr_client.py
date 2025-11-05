@@ -2,6 +2,11 @@ import sys
 import os
 import base64
 import requests
+import io
+
+if sys.stdout.encoding != 'utf-8':
+    print(sys.stdout.encoding, file=sys.stderr)
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def image_to_base64(image_path):
     """图片转base64"""

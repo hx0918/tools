@@ -1,5 +1,12 @@
+# coding: utf-8
+
 import sys
 import requests
+import io
+
+if sys.stdout.encoding != 'utf-8':
+    print(sys.stdout.encoding, file=sys.stderr)
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def main(text):
     if not text.strip():
@@ -22,8 +29,9 @@ def main(text):
         translated_text = translate_result["translated"]
         
         # 输出翻译结果到stdout
-        print(translated_text)
-        
+        print(translated_text, file=sys.stdout)
+        sys.stdout.flush()
+
     except Exception as e:
         print(f"翻译处理失败：{str(e)}", file=sys.stderr)
 

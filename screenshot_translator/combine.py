@@ -1,8 +1,15 @@
+# coding: utf-8
+
 import sys
 import os
 import subprocess
 import time
 from pathlib import Path
+import io
+
+if sys.stdout.encoding != 'utf-8':
+    print(sys.stdout.encoding, file=sys.stderr)
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 class ScreenshotTranslator:
     def __init__(self):
@@ -23,7 +30,7 @@ class ScreenshotTranslator:
             pass
         
         try:
-            result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', timeout=30)
             
             # if result.stdout:
             #     print(f"输出:\n{result.stdout.strip()}", file=sys.stderr)
@@ -48,7 +55,7 @@ class ScreenshotTranslator:
             pass
         
         try:
-            result = subprocess.run(command, capture_output=True, text=True)
+            result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8')
             
             # if result.stdout:
             #     print(f"输出:\n{result.stdout.strip()}", file=sys.stderr)

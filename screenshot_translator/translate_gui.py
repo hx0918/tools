@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import sys
 import subprocess
 from pathlib import Path
@@ -5,6 +7,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QTextEdit, QPushButton, QComboBox, QMessageBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
+import io
+
+if sys.stdout.encoding != 'utf-8':
+    print(sys.stdout.encoding, file=sys.stderr)
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 class TranslationThread(QThread):
     """翻译线程，避免界面卡顿"""
@@ -23,9 +30,10 @@ class TranslationThread(QThread):
             
             result = subprocess.run([
                 sys.executable, str(script_path), self.text
-            ], capture_output=True, text=True, timeout=30)
+            ], capture_output=True, text=True, encoding='utf-8') #, timeout=30)
             
             if result.returncode == 0:
+                print(result.stdout.strip())
                 self.finished.emit(result.stdout.strip(), True)
             else:
                 error_msg = result.stderr.strip() if result.stderr else "翻译失败"
